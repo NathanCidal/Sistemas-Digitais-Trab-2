@@ -80,12 +80,14 @@ end
 always @* begin
     case(EA)
         `ARMADO:                    //Logica para sair de Armado para X ou Y
-    
+            
         `DESARMADO:                 //Logica para Desarmado voltar a Armado ou não
 
         `ACIONADO:                  //Logica para Acionado avançar para ATIVAR_ALARME 
 
         `ATIVAR_ALARME:             //Logica pra avançar para ARMADO ou DESARMADO
+        
+        
         default: EA = `ARMADO;
     endcase
 end
@@ -95,6 +97,7 @@ end
 //--       A S S I G N s         --
 //--                             --
 //---------------------------------
+                
 
 
 endmodule
