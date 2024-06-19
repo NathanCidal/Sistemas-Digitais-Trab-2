@@ -105,7 +105,7 @@ always @* begin
 
         `WORKING: begin
             if(intCont != 8'b0) PE = `WORKING;
-            else PE = `DONE;
+            else PE = `WAIT;
         end
 
         default: PE = `WAIT;
@@ -118,8 +118,9 @@ end
 //--                             --
 //---------------------------------
 
-assign one_hz_enable (intCont % 8'd10 == 8'b0 && oneHzEnableCont != 4'b0 && EA == `WORKING)? 1'b1 : 1'b0;
-assign expired =     (intCont == 8'b0 && oneHzEnableCont == 4'b0)?         1'b1 : 1'b0;
+assign one_hz_enable =  (intCont % 8'd10 == 8'b0 && oneHzEnableCont != 4'b0 && EA == `WORKING)? 1'b1 : 1'b0;
+assign half_hz_enable = (intCont % 8'd5 == 8'b0 && oneHzEnableCont != 4'b0 && EA == `WORKING)? 1'b1 : 1'b0;
+assign expired =        (intCont == 8'b0 && oneHzEnableCont == 4'b0)?          1'b1 : 1'b0;
 
 
 endmodule

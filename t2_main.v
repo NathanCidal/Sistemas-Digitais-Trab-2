@@ -41,8 +41,12 @@ module toplevel(
 reg [1:0] EA;       //Estado Atual
 reg [1:0] PE;       //Próximo Estado
 
+reg[1:0] interval;
 
-
+reg start_timer;
+wire fuel_wire;
+wire expired;
+wire one_hz_enable;
 
 //---------------------------------
 //--                             --
@@ -50,9 +54,12 @@ reg [1:0] PE;       //Próximo Estado
 //--                             --
 //---------------------------------
 
+fuelPump DUT1 (.clock(clock), .reset(reset), .break(break), .hidden_sw(hidden_sw), .ignition(ignition), .fuel_pump(fuel_wire));
 
+time_parameters DUT2( .clock(clock), .reset(reset), .time_param_sel(time_param_sel), .time_value(time_value),
+.reprogram(reprogram), .interval(interval));
 
-
+timer DUT3( .clock(clock), .reset(reset), .value(), .start_timer(start_timer), .expired(expired), .one_hz_enable(one_hz_enable));
 
 //---------------------------------
 //--                             --
@@ -70,6 +77,20 @@ always @(posedge clock, posedge reset) begin
     end
 end
 
+//Para zerar valores indesejados
+always @(posedge clock, posedge reset) begin
+    if(reset) begin
+        interval = 2'b0;
+    end
+end
+
+//Para zerar valores indesejados
+always @(posedge clock, posedge reset) begin
+    if(EA == `ARMADO)
+        interval = 2'b01;
+        start_timer = 1'b1;
+end
+
 //---------------------------------
 //--                             --
 //--           F S M             --
@@ -80,15 +101,15 @@ end
 always @* begin
     case(EA)
         `ARMADO:                    //Logica para sair de Armado para X ou Y
-            
+            PE = `ARMADO;
         `DESARMADO:                 //Logica para Desarmado voltar a Armado ou não
-
+             PE = `ARMADO;       
         `ACIONADO:                  //Logica para Acionado avançar para ATIVAR_ALARME 
-
+            PE = `ARMADO;
         `ATIVAR_ALARME:             //Logica pra avançar para ARMADO ou DESARMADO
+             PE = `ARMADO;       
         
-        
-        default: EA = `ARMADO;
+        default: PE = `ARMADO;
     endcase
 end
 
@@ -98,6 +119,6 @@ end
 //--                             --
 //---------------------------------
                 
-
+assign fuel_pump = fuel_wire;
 
 endmodule

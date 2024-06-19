@@ -32,6 +32,9 @@ reg [3:0] time_value;
 //--                             --
 //---------------------------------
 
+toplevel DUT (.clock(clock), .reset(reset), .break(break), .door_driver(door_driver), .door_pass(door_pass), .ignition(ignition), .hidden_sw(hidden_sw), .reprogram(reprogram),
+            .time_param_sel(time_param_sel), .time_value(time_value));
+
 
 //---------------------------------
 //--    P A R A M E T E R S      --
@@ -47,6 +50,8 @@ end
 initial begin
     reset = 1;
     break = 0;
+    time_param_sel = 2'b0;
+    time_value = 4'b0;
 
     hidden_sw = 0;
     ignition = 0;
@@ -57,6 +62,13 @@ initial begin
     #PERIOD
     
     reset = 0;
+
+    #(PERIOD*3)
+    ignition = 1;
+
+    #(PERIOD*3)
+    break = 1;
+    hidden_sw = 1;
 end
 
 
