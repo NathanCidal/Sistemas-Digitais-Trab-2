@@ -16,9 +16,9 @@
 `define DISARM_WAIT_DELAY 3'b100
 `define DISARM_DONE       3'b101
 
-`define DOOR_CLOSED       2'b00;
-`define DOOR_OPEN         2'b01;
-`define DOOR_CLOSED_AGAIN 2'b10;
+`define DOOR_CLOSED       2'b00
+`define DOOR_OPEN         2'b01
+`define DOOR_CLOSED_AGAIN 2'b10
 
 //---------------------------------
 //--                             --
@@ -96,16 +96,16 @@ timer DUT3( .clock(), .reset(reset), .value(valueWire), .start_timer(start_timer
 //Process para poder fazer a atualização dos estados
 always @(posedge clock, posedge reset) begin
     if(reset) begin
-        EA = `ARMADO;
-        D_EA = `DISARM_DISABLE;
-        EA_DD = `DOOR_CLOSED;
-        EA_DP = `DOOR_CLOSED;
+        EA <= `DESARMADO;
+        D_EA <= `DISARM_DISABLE;
+        EA_DD <= `DOOR_CLOSED;
+        EA_DP <= `DOOR_CLOSED;
     end
     else begin
-            EA = PE;
-            D_EA = D_PE;
-            EA_DD = PE_DD;
-            EA_DP = PE_DP;
+            EA <= PE;
+            D_EA <= D_PE;
+            EA_DD <= PE_DD;
+            EA_DP <= PE_DP;
     end
 end
 
@@ -157,7 +157,7 @@ always @* begin
         `ARMADO:                    //Logica para sair de Armado para X ou Y
             PE = `ARMADO;
         `DESARMADO:                 //Logica para Desarmado voltar a Armado ou não
-             PE = `ARMADO;       
+            if(D_EA == `DISARM_DONE) PE = `ARMADO; else PE = `DESARMADO;      
         `ACIONADO:                  //Logica para Acionado avançar para ATIVAR_ALARME 
             PE = `ARMADO;
         `ATIVAR_ALARME:             //Logica pra avançar para ARMADO ou DESARMADO
@@ -207,14 +207,28 @@ end
 always @* begin
     case(D_EA)
         `DISARM_DISABLE:
+            if(ignition == 1'b0) D_PE = `DISARM_WAIT_IGN; else D_PE = `DISARM_DISABLE;
 
         `DISARM_WAIT_IGN:
-
+            if(ignition == 1'b1) D_PE = `DISARM_DISABLE;
+            else begin
+                if(driverInside == 1'b0 && passagerInside == 1'b0) 
+                    D_PE = `DISARM_OPEN_DOOR; 
+                else 
+                    D_PE = `DISARM_WAIT_IGN;
+            end
+        
         `DISARM_OPEN_DOOR:  //Espera tanto o motorista quanto o passageiro não estarem no carro
-
-        `DISARM_WAIT_DELAY:
-
+            if(ignition == 1'b1) D_PE = `DISARM_DISABLE;
+            else begin
+                if(driverInside == 1'b1 || passagerInside == 1'b1) D_PE = `DISARM_WAIT_IGN;
+                    else begin
+                        if(expired == 1'b1) D_PE = `DISARM_DONE;
+                        else D_PE = `DISARM_OPEN_DOOR;
+                    end     
+            end            
         `DISARM_DONE:
+            D_PE = `DISARM_DISABLE;
 
         default: D_PE = `DISARM_DISABLE;
     endcase
@@ -250,10 +264,10 @@ always @(posedge clock, posedge reset) begin
     end
     else begin
 
-    if(EA_DD = `DOOR_CLOSED_AGAIN)
+    if(EA_DD == `DOOR_CLOSED_AGAIN)
         driverInside = ~driverInside;
 
-    if(EA_DP = `DOOR_CLOSED_AGAIN)
+    if(EA_DP == `DOOR_CLOSED_AGAIN)
         passagerInside = ~passagerInside;
 
     end
