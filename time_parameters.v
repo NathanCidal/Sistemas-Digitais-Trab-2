@@ -44,8 +44,7 @@ reg [3:0] T_ALARM_ON;               //Default: 1010 - 11
 //--                             --
 //---------------------------------
 
-timer DUT(.clock(clock), .reset(reset),
-          .value(value), .start_timer());
+
 
 //---------------------------------
 //--                             --
@@ -55,20 +54,20 @@ timer DUT(.clock(clock), .reset(reset),
 
 always @(posedge clock, posedge reset) begin
     if(reset) begin
-        T_ARM_DELAY       = 4'b0110;
-        T_DRIVER_DELAY    = 4'b1000;
-        T_PASSENGER_DELAY = 4'b1111;
-        T_ALARM_ON        = 4'b1010;
+        T_ARM_DELAY       <= 4'b0110;
+        T_DRIVER_DELAY    <= 4'b1000;
+        T_PASSENGER_DELAY <= 4'b1111;
+        T_ALARM_ON        <= 4'b1010;
     end
     else begin
         if(clock) begin
             if(reprogram) begin
                 case(time_param_sel)
-                    2'b00: T_ARM_DELAY       = time_value;
-                    2'b01: T_DRIVER_DELAY    = time_value;
-                    2'b10: T_PASSENGER_DELAY = time_value;
-                    2'b11: T_ALARM_ON        = time_value;
-                    default: T_ALARM_ON      = time_value;
+                    2'b00: T_ARM_DELAY       <= time_value;
+                    2'b01: T_DRIVER_DELAY    <= time_value;
+                    2'b10: T_PASSENGER_DELAY <= time_value;
+                    2'b11: T_ALARM_ON        <= time_value;
+                    default: T_ALARM_ON      <= time_value;
                 endcase
             end
         end

@@ -26,8 +26,9 @@ add wave -noupdate /tb/DUT/DUT3/expired
 add wave -noupdate /tb/DUT/DUT3/one_hz_enable
 add wave -noupdate /tb/DUT/DUT3/EA
 add wave -noupdate /tb/DUT/DUT3/PE
+add wave -noupdate -radix decimal /tb/DUT/DUT3/intCont
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {144 ns} 0}
+WaveRestoreCursors {{Cursor 1} {35 ns} 0}
 quietly wave cursor active 1
 configure wave -namecolwidth 150
 configure wave -valuecolwidth 100
@@ -43,4 +44,4 @@ configure wave -griddelta 40
 configure wave -timeline 0
 configure wave -timelineunits ns
 update
-WaveRestoreZoom {50 ns} {1050 ns}
+WaveRestoreZoom {0 ns} {448 ns}

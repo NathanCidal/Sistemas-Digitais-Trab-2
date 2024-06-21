@@ -77,20 +77,20 @@ end
 //Process de operações durante a minha FSM
 always @(posedge clock, posedge reset) begin
     if(reset) begin
-        intCont = 8'd0;
-        oneHzEnableCont = value;
+        intCont <= 8'd0;
+        oneHzEnableCont <= 4'b0;
     end
     else if(clock) begin
         if(start_timer == 1'b1) begin
-            intCont = value * 10;
-            oneHzEnableCont = value;
+            intCont <= value * 10;
+            oneHzEnableCont <= value;
         end
 
         if(EA == `WORKING) begin
-            intCont = intCont - 8'b1;
+            intCont <= intCont - 8'b1;
 
             if(intCont % 8'd10 == 8'b0 && oneHzEnableCont != 4'b0) begin
-             oneHzEnableCont = oneHzEnableCont - 4'b1; end
+             oneHzEnableCont <= oneHzEnableCont - 4'b1; end
         end
     end
 end
