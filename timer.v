@@ -3,10 +3,6 @@
 //--          N O T E S          --
 //--                             --
 //---------------------------------
-//--    
-//--    -> Segundo a implementação, temos um Clock de 100 MHz, ou seja,
-//-- 1 segundo = 100.000.000 ciclos de Clock. Para fazer testes, será
-//-- usado a lógica 1 segundo = 10 clicos de Clock <Por enquanto>
 //--
 //---------------------------------
 
@@ -15,9 +11,6 @@
 //--       D E F I N E S         --
 //--                             --
 //---------------------------------
-
-`define WAIT       1'b0 //Estado Inicial - Esperando o start_timer
-`define WORKING    1'b1 //Estado Ciclo - Repetindo até chegar em zero 
 
 //---------------------------------
 //--                             --
@@ -28,13 +21,13 @@
 module timer(
     input clock,
     input reset,
-
     input [3:0] value,          //Valor BIN que é equivalente a segundos
     input start_timer,
-
     output expired,             //Retorna para o sistema principal
     output one_hz_enable,       //Retorna para o sistema principal
-    output half_hz_enable       //Utilizado na Sirene como Input
+    output half_hz_enable,       //Utilizado na Sirene como Input
+
+    output [3:0] value_display   //Utilizado para mostrar no Display o Valor
 );
 
 //---------------------------------
@@ -43,14 +36,14 @@ module timer(
 //--                             --
 //---------------------------------
 
-// 15 Segundos -> 150 Clocks -> 128 = 2^7 ->     
-// 3:0 = 4 Bits (15),
-// 4:0 = 5 Bits (31) ,       5:0   = 6 Bits (63), 
-// 6:0 = 7 Bits (127),       7:0   = 8 Bits (255)
+reg [30:0] t;       //Timer to later convert to Second
+reg [30:0] t2;      //Timer for Half Hertz Enable
 
-reg [7:0] intCont;         // Contador Interno
-reg [3:0] oneHzEnableCont; // Contador criado para contar quantos Hz podem ser ativados
-reg EA, PE;          // Estado Atual - Proxime Estado
+reg ohze;           //One Hz Enable
+reg hhze;           //Two Hz Enable
+
+reg [3:0] contador_interno;        //Contador Interno
+reg [4:0] contador_interno_dobro;  //Contador Secundário para Meio Segundo  
 
 //---------------------------------
 //--                             --
@@ -64,52 +57,54 @@ reg EA, PE;          // Estado Atual - Proxime Estado
 //--                             --
 //---------------------------------
 
-//Process padrão para a atualização da FSM
-always @(posedge clock, posedge reset) begin
+//Always responsável pela redução dos ciclos do T e também da inicialização
+always @(posedge clock, posedge reset)
+begin
     if(reset) begin
-        EA = `WAIT;
-    end
-    else if(clock) begin
-        EA = PE;
-    end
-end
-
-//Process de operações durante a minha FSM
-always @(posedge clock, posedge reset) begin
-    if(reset) begin
-        intCont <= 8'd0;
-        oneHzEnableCont <= 4'b0;
-    end
-    else if(clock) begin
-        if(start_timer == 1'b1) begin
-            intCont <= value * 10;
-            oneHzEnableCont <= value;
+        t <= 30'b0;
+        t2 <= 30'b0;
+        contador_interno <= 4'b0;
+        contador_interno_dobro <= 5'b0;
+        ohze <= 0;
+        hhze <= 0;
+    end else begin
+        if(start_timer) begin
+            t <= 0;
+            t2 <= 0;
+            contador_interno <= value;
+            contador_interno_dobro <= value * 2;
+            ohze <= 0;
+            hhze <= 0;
+        end else 
+        begin
+            if(contador_interno > 0) begin 
+                if(t < 100_000_000) begin  
+                    t <= t + 1;
+                    ohze <= 0;
+                end else begin             
+                    t <= 0;
+                    ohze <= 1;
+                end                        
+            end else begin
+                t <= 0;
+                ohze <= 0;
+            end
         end
 
-        if(EA == `WORKING) begin
-            intCont <= intCont - 8'b1;
-
-            if(intCont % 8'd10 == 8'b0 && oneHzEnableCont != 4'b0) begin
-             oneHzEnableCont <= oneHzEnableCont - 4'b1; end
+        begin
+            if(contador_interno_dobro > 0) begin
+                if(t2 < 50_000_000) begin
+                    t2 <= t2 + 1;
+                end else begin
+                    t2 <= 0;
+                    hhze <= ! hhze;
+                end
+            end else begin
+                t2 <= 0;
+                hhze <= 0;
+            end
         end
     end
-end
-
-//FSM
-always @* begin
-    case(EA)
-        `WAIT: begin
-            if(start_timer == 1'b1) PE = `WORKING;
-            else PE = `WAIT;
-        end
-
-        `WORKING: begin
-            if(intCont != 8'b0) PE = `WORKING;
-            else PE = `WAIT;
-        end
-
-        default: PE = `WAIT;
-    endcase
 end
 
 //---------------------------------
@@ -118,9 +113,9 @@ end
 //--                             --
 //---------------------------------
 
-assign one_hz_enable =  (intCont % 8'd10 == 8'b0 && oneHzEnableCont != 4'b0 && EA == `WORKING)? 1'b1 : 1'b0;
-assign half_hz_enable = (intCont % 8'd5 == 8'b0 && oneHzEnableCont != 4'b0 && EA == `WORKING)? 1'b1 : 1'b0;
-assign expired =        (intCont == 8'b0 && oneHzEnableCont == 4'b0)?          1'b1 : 1'b0;
-
+assign value_display = contador_interno;
+assign expired = (contador_interno <= 0)? 1 : 0;
+assign one_hz_enable = ohze;
+assign half_hz_enable = hhze;
 
 endmodule
